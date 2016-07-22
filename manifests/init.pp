@@ -314,8 +314,15 @@ class mysql (
   
   ### Root password setup
   $random_password = $mysql::password_salt ? {
-    ''       => fqdn_rand(100000000000),
-    default  => fqdn_rand(100000000000,$mysql::password_salt),
+    ''       =>  generate('/bin/sh', '-c', "openssl passwd -1 `cat /dev/urandom | tr -dc '[:alnum:]' | fold -w 16 | head -n 1` | tr -dc '[:print:]'"),
+    default  => generate('/bin/sh', '-c', "openssl passwd -1 -salt ${mysql::password_salt} `cat /dev/urandom | tr -dc '[:alnum:]' | fold -w 16 | head -n 1` | tr -dc '[:print:]'"),
+  }
+
+  if $mysql::root_password == 'auto'{
+    package { 'openssl':
+      ensure => true,
+      name   => 'openssl',
+    }
   }
 
   $real_root_password = $mysql::root_password ? {
